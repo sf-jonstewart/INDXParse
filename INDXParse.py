@@ -866,7 +866,7 @@ def entry_bodyfile(entry, filename=False):
             created=created)
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Parse NTFS INDX files.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-c', action="store_true",
@@ -955,3 +955,7 @@ if __name__ == '__main__':
             #   if we encounter a weird header, and its at offset 0, then align
             #   will make a mistake here and align back to 0
             off = INDEX_NODE_BLOCK_SIZE
+
+
+if __name__ == '__main__':
+    main()
