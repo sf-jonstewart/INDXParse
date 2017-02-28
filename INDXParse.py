@@ -866,7 +866,7 @@ def entry_bodyfile(entry, filename=False):
             created=created)
 
 
-def parse_cmdline():
+def construct_argparse():
     parser = argparse.ArgumentParser(description='Parse NTFS INDX files.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-c', action="store_true",
@@ -883,59 +883,56 @@ def parse_cmdline():
             help="Choose index type (dir, sdh, or sii)")
     parser.add_argument('filename', action="store",
             help="Input INDX file path")
-    return parser.parse_args()
+    return parser
 
 
-def main():
-    results = parse_cmdline()
-    if results.verbose:
+def run_indxparse(args):
+    if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
 
     # TODO: the following logic is a mess. please clean it up.
 
-    do_csv = results.csv or \
-        (not results.csv and not results.bodyfile)
+    do_csv = args.csv or \
+        (not args.csv and not args.bodyfile)
 
-    if(results.bodyfile and results.index_type != "dir"):
-        print('Only "dir" type supports bodyfile output')
-        sys.exit(1)
-    elif(results.deleted and  results.index_type != "dir"):
-        print('For now, only "dir" type supports slackspace entries')
-        sys.exit(1)
+    if(args.bodyfile and args.index_type != "dir"):
+        raise ValueError('Only "dir" type supports bodyfile output')
+    elif(args.deleted and  args.index_type != "dir"):
+        raise ValueError('For now, only "dir" type supports slackspace entries')
 
     if do_csv:
-        if results.index_type == "dir":
+        if args.index_type == "dir":
             print("FILENAME,\tPHYSICAL SIZE,\tLOGICAL SIZE,\tMODIFIED TIME,\tACCESSED TIME,\tCHANGED TIME,\tCREATED TIME")
-        if results.index_type == "sdh":
+        if args.index_type == "sdh":
             print("SDH KEY,\tSDH DATA,\tSECURITY ID KEY,\tSECURITY ID DATA,\tSDS SECURITY DESCRIPTOR OFFSET,\tSDS SECURITY DESCRIPTOR SIZE")
-        if results.index_type == "sii":
+        if args.index_type == "sii":
             print("SDH DATA,\tSECURITY ID KEY,\tSECURITY ID DATA,\tSDS SECURITY DESCRIPTOR OFFSET,\tSDS SECURITY DESCRIPTOR SIZE")
 
-    with open(results.filename, "rb") as f:
+    with open(args.filename, "rb") as f:
         b = array.array("B", f.read())
 
     off = 0
     while off < len(b):
         h = NTATTR_STANDARD_INDEX_HEADER(b, off, False)
-        for e in h.entries(results.index_type):
+        for e in h.entries(args.index_type):
             if do_csv:
-                if results.index_type == "sdh":
+                if args.index_type == "sdh":
                     print(entry_SDH_csv(e))
-                if results.index_type == "sii":
+                if args.index_type == "sii":
                     print(entry_SII_csv(e))
-                if results.index_type == "dir":
+                if args.index_type == "dir":
                     try:
                         print(entry_dir_csv(e))
                     except UnicodeEncodeError:
                         print(entry_dir_csv(e, e.filename().encode("ascii", "replace") + " (error decoding filename)"))
-            elif results.bodyfile:
+            elif args.bodyfile:
                 try:
                     print(entry_bodyfile(e))
                 except UnicodeEncodeError:
                     print(entry_bodyfile(e, e.filename().encode("ascii", "replace") + " (error decoding filename)"))
-        if results.deleted:
+        if args.deleted:
             for e in h.deleted_entries():
                 fn = e.filename() + " (slack at %s)" % (hex(e.offset()))
                 bad_fn = e.filename().encode("ascii", "replace") + " (slack at %s)(error decoding filename)" % (hex(e.offset()))
@@ -944,7 +941,7 @@ def main():
                         print(entry_dir_csv(e, fn))
                     except UnicodeEncodeError:
                         print(entry_dir_csv(e, bad_fn))
-                elif results.bodyfile:
+                elif args.bodyfile:
                     try:
                         print(entry_bodyfile(e, fn))
                     except UnicodeEncodeError:
@@ -959,6 +956,16 @@ def main():
             #   will make a mistake here and align back to 0
             off = INDEX_NODE_BLOCK_SIZE
 
+
+def main():
+    parser= construct_argparse()
+    try:
+        args = parser.parse_args()
+        run_indxparse(args)
+    except ValueError as e:
+        print("\n\n *** Error: {}\n\n".format(e))
+        parser.print_help()
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
