@@ -866,7 +866,7 @@ def entry_bodyfile(entry, filename=False):
             created=created)
 
 
-def main():
+def parse_cmdline():
     parser = argparse.ArgumentParser(description='Parse NTFS INDX files.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-c', action="store_true",
@@ -883,8 +883,11 @@ def main():
             help="Choose index type (dir, sdh, or sii)")
     parser.add_argument('filename', action="store",
             help="Input INDX file path")
-    results = parser.parse_args()
+    return parser.parse_args()
 
+
+def main():
+    results = parse_cmdline()
     if results.verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:
