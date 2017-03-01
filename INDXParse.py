@@ -892,9 +892,9 @@ def run_indxparse(args):
     if do_csv:
         if args.index_type == "dir":
             print("FILENAME,\tPHYSICAL SIZE,\tLOGICAL SIZE,\tMODIFIED TIME,\tACCESSED TIME,\tCHANGED TIME,\tCREATED TIME")
-        if args.index_type == "sdh":
+        elif args.index_type == "sdh":
             print("SDH KEY,\tSDH DATA,\tSECURITY ID KEY,\tSECURITY ID DATA,\tSDS SECURITY DESCRIPTOR OFFSET,\tSDS SECURITY DESCRIPTOR SIZE")
-        if args.index_type == "sii":
+        elif args.index_type == "sii":
             print("SDH DATA,\tSECURITY ID KEY,\tSECURITY ID DATA,\tSDS SECURITY DESCRIPTOR OFFSET,\tSDS SECURITY DESCRIPTOR SIZE")
 
     with open(args.filename, "rb") as f:
