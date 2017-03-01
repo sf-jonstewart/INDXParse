@@ -825,37 +825,24 @@ def unixtime(ts):
     return int(time.mktime(ts.timetuple()))
 
 
+_DEFAULT_TIME = unixtime(datetime(1970, 1, 1, 0, 0, 0))
+
+def safe_unixtime(ts):
+    retval = _DEFAULT_TIME
+    try:
+        retval = unixtime(ts)
+    except ValueError:
+        pass
+    return retval
+
+
 def entry_bodyfile(entry, filename=False):
-    if filename:
-        fn = filename
-    else:
-        fn = entry.filename()
+    fn = filename if filename else entry.filename()
 
-    DEFAULT_TIME = unixtime(datetime(1970, 1, 1, 0, 0, 0))
-    modified = DEFAULT_TIME
-    accessed = DEFAULT_TIME
-    changed = DEFAULT_TIME
-    created = DEFAULT_TIME
-
-    try:
-        modified = unixtime(entry.modified_time_safe())
-    except ValueError:
-        pass
-
-    try:
-        accessed = unixtime(entry.accessed_time_safe())
-    except ValueError:
-        pass
-
-    try:
-        changed = unixtime(entry.changed_time_safe())
-    except ValueError:
-        pass
-
-    try:
-        created = unixtime(entry.created_time_safe())
-    except ValueError:
-        pass
+    modified = safe_unixtime(entry.modified_time_safe())
+    accessed = safe_unixtime(entry.accessed_time_safe())
+    changed = safe_unixtime(entry.changed_time_safe())
+    created = safe_unixtime(entry.created_time_safe())
 
     return u"0|{filename}|0|0|0|0|{lsize}|{accessed}|{modified}|{changed}|{created}".format(
             filename=fn,
